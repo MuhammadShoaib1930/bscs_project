@@ -53,31 +53,6 @@ $result = $conn->query($sql);
         table tr:hover {
             background-color: #f1f1f1;
         }
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-        .btn {
-            padding: 5px 10px;
-            font-size: 12px;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .btn-edit {
-            background-color: #28a745;
-        }
-        .btn-delete {
-            background-color: #dc3545;
-        }
-        .btn-edit:hover {
-            background-color: #218838;
-        }
-        .btn-delete:hover {
-            background-color: #c82333;
-        }
         .no-records {
             text-align: center;
             font-size: 18px;
@@ -104,7 +79,6 @@ $result = $conn->query($sql);
                         <th>Total</th>
                         <th>Percentage</th>
                         <th>Grade</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -123,10 +97,6 @@ $result = $conn->query($sql);
                             <td><?= htmlspecialchars($row['total_marks']) ?></td>
                             <td><?= htmlspecialchars($row['percentage']) ?>%</td>
                             <td><?= htmlspecialchars($row['grade']) ?></td>
-                            <td class="action-buttons">
-                                <button class="btn btn-edit" onclick="window.location.href='update.php?roll_no=<?= $row['roll_no'] ?>'">Edit</button>
-                                <button class="btn btn-delete" onclick="confirmDelete('<?= $row['roll_no'] ?>')">Delete</button>
-                            </td>
                         </tr>
                     <?php endwhile; ?>
                 </tbody>
@@ -135,14 +105,6 @@ $result = $conn->query($sql);
             <div class="no-records">No records found!</div>
         <?php endif; ?>
     </div>
-
-    <script>
-        function confirmDelete(rollNo) {
-            if (confirm("Are you sure you want to delete this record?")) {
-                window.location.href = 'delete.php?roll_no=' + rollNo;
-            }
-        }
-    </script>
 </body>
 </html>
 
