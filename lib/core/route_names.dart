@@ -1,5 +1,4 @@
-class Routes {
+class RoutesNames {
   static const String home = '/';
-  static const String relay = '/relay';
-  static const String gas = '/gas';
+  static const String splashPage = '/SplashPage';
 }

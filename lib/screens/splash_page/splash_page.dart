@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:bscs_project/core/route_names.dart';
 import 'package:flutter/material.dart';
 
 class SplashPage extends StatefulWidget {
@@ -39,7 +40,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
 
     // Navigate to main page after 4 seconds
     Timer(const Duration(seconds: 4), () {
-      Navigator.pushReplacementNamed(context, '/bottomSliderPages');
+      Navigator.pushNamed(context, RoutesNames.home);
     });
   }
 
@@ -74,6 +75,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                 (p) => Positioned(
                   left: p.x * MediaQuery.of(context).size.width,
                   top: p.y * MediaQuery.of(context).size.height,
+                  // ignore: deprecated_member_use
                   child: Icon(p.icon, size: p.size, color: p.color.withOpacity(0.7)),
                 ),
               ),
@@ -90,6 +92,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
+                            // ignore: deprecated_member_use
                             color: Colors.white.withOpacity(0.6),
                             blurRadius: 24,
                             spreadRadius: 8,

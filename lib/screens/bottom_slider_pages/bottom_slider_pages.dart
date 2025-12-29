@@ -63,10 +63,12 @@
 //     );
 //   }
 // }
+import 'package:bscs_project/screens/door_window_exhaust/bloc/door_window_exhaust_gas_bloc.dart';
 import 'package:bscs_project/screens/door_window_exhaust/door_window_exhaust.dart';
 import 'package:bscs_project/screens/relays_page/bloc/relays_bloc.dart';
 import 'package:bscs_project/screens/relays_page/relays_page.dart';
 import 'package:bscs_project/screens/bottom_slider_pages/bloc/bottom_slider_page_bloc.dart';
+import 'package:bscs_project/screens/wifi_settings_page/bloc/wifi_settings_bloc.dart';
 import 'package:bscs_project/screens/wifi_settings_page/wifi_settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -95,8 +97,11 @@ class _BottomSliderPagesState extends State<BottomSliderPages> {
             },
             children: [
               BlocProvider(create: (context) => RelaysBloc(), child: RelaysPage()),
-              DoorWindowExhaust(),
-              WifiSettingsPage(),
+              BlocProvider(
+                create: (context) => DoorWindowExhaustGasBloc(),
+                child: DoorWindowExhaust(),
+              ),
+              BlocProvider(create: (context) => WifiSettingsBloc(), child: WifiSettingsPage()),
             ],
           ),
           bottomNavigationBar: Container(

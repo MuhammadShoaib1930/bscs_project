@@ -1,10 +1,15 @@
+import 'package:bscs_project/app.dart';
+import 'package:bscs_project/core/route_names.dart';
+import 'package:bscs_project/screens/splash_page/splash_page.dart';
 import 'package:flutter/material.dart';
 
 class RouteGenerator {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
-      // case Routes.home:
-      //   return MaterialPageRoute(builder: (_) => HomeScreen());
+      case RoutesNames.splashPage:
+        return MaterialPageRoute(builder: (_) => SplashPage());
+      case RoutesNames.home:
+        return MaterialPageRoute(builder: (_) => App());
       default:
         return MaterialPageRoute(
           builder: (_) =>

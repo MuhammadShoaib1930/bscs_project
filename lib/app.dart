@@ -16,7 +16,7 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: Routes.home,
+      initialRoute: RoutesNames.splashPage,
       onGenerateRoute: RouteGenerator.generateRoute,
       home: BlocProvider(create: (context) => BottomSliderPageBloc(), child: const BottomSliderPages()),
     );
