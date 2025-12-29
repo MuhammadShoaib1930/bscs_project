@@ -1,4 +1,6 @@
+import 'package:bscs_project/screens/wifi_settings_page/bloc/wifi_settings_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class WifiSettingsPage extends StatefulWidget {
   const WifiSettingsPage({super.key});
@@ -10,23 +12,14 @@ class WifiSettingsPage extends StatefulWidget {
 class _WifiSettingsPageState extends State<WifiSettingsPage> {
   final TextEditingController ssidController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-
-  bool isConnected = false;
-  String connectedSsid = "--";
-
-  Future<void> _onRefresh() async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    setState(() {
-      // later: fetch real ESP8266 WiFi status
-    });
+  @override
+  void initState() {
+    super.initState();
+    _onRefresh();
   }
 
-  void _connectWifi() {
-    // later: send SSID & Password to ESP8266
-    setState(() {
-      connectedSsid = ssidController.text;
-      isConnected = true;
-    });
+  Future<void> _onRefresh() async {
+    context.read<WifiSettingsBloc>().add(GetWifiFromFiebase());
   }
 
   @override
@@ -63,94 +56,106 @@ class _WifiSettingsPageState extends State<WifiSettingsPage> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      /// CONNECTION STATUS
-                      Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        child: ListTile(
-                          leading: Icon(
-                            isConnected ? Icons.wifi : Icons.wifi_off,
-                            size: 36,
-                            color: isConnected ? Colors.green : Colors.red,
-                          ),
-                          title: Text(
-                            isConnected ? "Connected" : "Not Connected",
-                            style: const TextStyle(fontSize: 22),
-                          ),
-                          subtitle: Text(
-                            "SSID: $connectedSsid",
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          trailing: Icon(
-                            isConnected ? Icons.check_circle : Icons.error,
-                            color: isConnected ? Colors.green : Colors.red,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      /// SSID INPUT
-                      Card(
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: TextField(
-                            controller: ssidController,
-                            decoration: const InputDecoration(
-                              labelText: "WiFi SSID",
-                              prefixIcon: Icon(Icons.router),
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      /// PASSWORD INPUT
-                      Card(
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: TextField(
-                            controller: passwordController,
-                            obscureText: true,
-                            decoration: const InputDecoration(
-                              labelText: "WiFi Password",
-                              prefixIcon: Icon(Icons.lock),
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      /// CONNECT BUTTON
-                      SizedBox(
-                        width: double.infinity,
-                        height: 54,
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.wifi_tethering),
-                          label: Text(
-                            isConnected ? "Reconnect WiFi" : "Connect WiFi",
-                            style: const TextStyle(fontSize: 20),
-                          ),
-                          onPressed: _connectWifi,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                  child: BlocBuilder<WifiSettingsBloc, WifiSettingsState>(
+                    builder: (context, state) {
+                      return Column(
+                        children: [
+                          Card(
+                            elevation: 4,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            child: ListTile(
+                              leading: Icon(
+                                (state.ssid.isNotEmpty) ? Icons.wifi : Icons.wifi_off,
+                                size: 36,
+                                color: (state.ssid.isNotEmpty) ? Colors.green : Colors.red,
+                              ),
+                              title: Text(
+                                (state.ssid.isNotEmpty) ? "Connected" : "Not Connected",
+                                style: const TextStyle(fontSize: 22),
+                              ),
+                              subtitle: Text(
+                                "SSID: ${state.ssid}\npassword: ${state.password}",
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              trailing: Icon(
+                                (state.ssid.isNotEmpty) ? Icons.check_circle : Icons.error,
+                                color: (state.ssid.isNotEmpty) ? Colors.green : Colors.red,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
 
-                      const SizedBox(height: 20),
-                    ],
+                          const SizedBox(height: 16),
+
+                          /// SSID INPUT
+                          Card(
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: TextField(
+                                controller: ssidController,
+                                decoration: const InputDecoration(
+                                  labelText: "WiFi SSID",
+                                  prefixIcon: Icon(Icons.router),
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          /// PASSWORD INPUT
+                          Card(
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: TextField(
+                                controller: passwordController,
+                                obscureText: true,
+                                decoration: const InputDecoration(
+                                  labelText: "WiFi Password",
+                                  prefixIcon: Icon(Icons.lock),
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          /// CONNECT BUTTON
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: ElevatedButton.icon(
+                              icon: const Icon(Icons.wifi_tethering),
+                              label: Text(
+                                (state.ssid.isNotEmpty) ? "Reconnect WiFi" : "Connect WiFi",
+                                style: const TextStyle(fontSize: 20),
+                              ),
+                              onPressed: () {
+                                context.read<WifiSettingsBloc>().add(
+                                  SetWifiSsidPassword(
+                                    ssid: ssidController.text.toString().trim(),
+                                    password: passwordController.text.toString().trim(),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),

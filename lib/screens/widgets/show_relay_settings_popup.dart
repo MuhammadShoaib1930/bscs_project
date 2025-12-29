@@ -3,7 +3,7 @@ import 'package:bscs_project/screens/relays_page/bloc/relays_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-Future<void> showRelaySettingsPopup(
+Future<Future<Object?>> showRelaySettingsPopup(
   BuildContext parentContext, {
   required int index,
   required int initialPower,
@@ -18,95 +18,175 @@ Future<void> showRelaySettingsPopup(
   String start = startTime;
   String end = endTime;
 
-  return showDialog(
-    context: parentContext, // ✅ use parent context
+  return showGeneralDialog(
+    context: parentContext,
     barrierDismissible: false,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text("Relay Settings"),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: powerController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "Power (Watt)"),
-                ),
-
-                TextField(
-                  controller: targetController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: "Target (kWh)"),
-                ),
-
-                TextField(
-                  enabled: false,
-                  decoration: InputDecoration(
-                    labelText: "Current (kWh)",
-                    hintText: currentKwh.toStringAsFixed(3),
+    barrierLabel: "RelaySettings",
+    barrierColor: Colors.black54,
+    transitionDuration: const Duration(milliseconds: 300),
+    pageBuilder: (_, __, ___) {
+      return const SizedBox();
+    },
+    transitionBuilder: (_, animation, __, ___) {
+      return ScaleTransition(
+        scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+        child: FadeTransition(
+          opacity: animation,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            contentPadding: const EdgeInsets.all(18),
+            titlePadding: EdgeInsets.zero,
+            title: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.teal, Colors.blue]),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.power, color: Colors.white, size: 28),
+                  const SizedBox(width: 10),
+                  Text(
+                    "Relay ${index + 1} Settings",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
+                ],
+              ),
+            ),
+            content: StatefulBuilder(
+              builder: (context, setState) {
+                return SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      /// POWER INPUT
+                      TextField(
+                        controller: powerController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Power Consumption",
+                          suffixText: "W",
+                          prefixIcon: Icon(Icons.flash_on),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
 
-                const SizedBox(height: 12),
+                      const SizedBox(height: 14),
 
-                ListTile(
-                  title: Text("Start Time: $start", style: const TextStyle(color: Colors.pink)),
-                  trailing: const Icon(Icons.access_time, color: Colors.pink),
-                  onTap: () async {
-                    final t = await showTimePicker(
-                      context: context,
-                      initialTime: Helper.parseSafeTime(start),
-                    );
-                    if (t != null) {
-                      setState(() {
-                        start =
-                            "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}";
-                      });
-                    }
-                  },
-                ),
+                      /// TARGET INPUT
+                      TextField(
+                        controller: targetController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Target Energy",
+                          suffixText: "kWh",
+                          prefixIcon: Icon(Icons.bolt),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
 
-                ListTile(
-                  title: Text("End Time: $end", style: const TextStyle(color: Colors.pink)),
-                  trailing: const Icon(Icons.access_time, color: Colors.pink),
-                  onTap: () async {
-                    final t = await showTimePicker(
-                      context: context,
-                      initialTime: Helper.parseSafeTime(end),
-                    );
-                    if (t != null) {
-                      setState(() {
-                        end =
-                            "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}";
-                      });
-                    }
-                  },
+                      const SizedBox(height: 14),
+
+                      /// CURRENT INFO CARD
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.bar_chart, color: Colors.blue),
+                            const SizedBox(width: 10),
+                            Text(
+                              "Current Usage: ${currentKwh.toStringAsFixed(3)} kWh",
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      /// START TIME
+                      ListTile(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        tileColor: Colors.grey.shade100,
+                        leading: const Icon(Icons.play_circle, color: Colors.green),
+                        title: Text("Start Time: $start"),
+                        onTap: () async {
+                          final t = await showTimePicker(
+                            context: context,
+                            initialTime: Helper.parseSafeTime(start),
+                          );
+                          if (t != null) {
+                            setState(() {
+                              start =
+                                  "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}";
+                            });
+                          }
+                        },
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      /// END TIME
+                      ListTile(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        tileColor: Colors.grey.shade100,
+                        leading: const Icon(Icons.stop_circle, color: Colors.red),
+                        title: Text("End Time: $end"),
+                        onTap: () async {
+                          final t = await showTimePicker(
+                            context: context,
+                            initialTime: Helper.parseSafeTime(end),
+                          );
+                          if (t != null) {
+                            setState(() {
+                              end =
+                                  "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}";
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            actionsPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(parentContext),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.save),
+                label: const Text("Save"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-              ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Cancel")),
-          ElevatedButton(
-            onPressed: () {
-              parentContext.read<RelaysBloc>().add(
-                ChangeSettingRelays(
-                  index: index,
-                  initialPower: int.parse(powerController.text),
-                  initialTarget: double.parse(targetController.text),
-                  currentKwh: currentKwh,
-                  startTime: start,
-                  endTime: end,
-                ),
-              );
-              Navigator.pop(dialogContext);
-            },
-            child: const Text("OK"),
+                onPressed: () {
+                  parentContext.read<RelaysBloc>().add(
+                    ChangeSettingRelays(
+                      index: index,
+                      initialPower: int.tryParse(powerController.text) ?? initialPower,
+                      initialTarget: double.tryParse(targetController.text) ?? initialTarget,
+                      currentKwh: currentKwh,
+                      startTime: start,
+                      endTime: end,
+                    ),
+                  );
+                  Navigator.pop(parentContext);
+                },
+              ),
+            ],
           ),
-        ],
+        ),
       );
     },
   );
