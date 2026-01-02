@@ -180,7 +180,7 @@ void connectWiFi(String ssid = "", String pass = "") {
     }
     if (WiFi.status() != WL_CONNECTED) {
         log("[WIFI] Starting config portal");
-        if (!wm.autoConnect("SmartHome-Setup", "12345678")) ESP.restart();
+        if (!wm.autoConnect("Setup", "12345678")) ESP.restart();
     }
     log("[WIFI] Connected: " + WiFi.SSID());
 }
