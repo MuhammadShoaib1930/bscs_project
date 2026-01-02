@@ -43,3 +43,20 @@ class IsThresholdEnable extends DoorWindowExhaustGasEvent {
    @override
   List<Object> get props => [isThresholdEnable];
 }
+class UpdateValuesFromFirebase extends DoorWindowExhaustGasEvent {
+  final int door;
+  final int window;
+  final int exhaust;
+  final int gasValue;
+  final bool gasRisk;
+  final int gasThreshold;
+
+  const UpdateValuesFromFirebase({
+    required this.door,
+    required this.window,
+    required this.exhaust,
+    required this.gasValue,
+    required this.gasRisk,
+    required this.gasThreshold,
+  });
+}
