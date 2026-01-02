@@ -20,18 +20,14 @@ class ChangeSettingRelays extends RelaysEvent {
   final int initialPower;
   final double initialTarget;
   final double currentKwh;
-  final String startTime;
-  final String endTime;
   const ChangeSettingRelays({
     required this.initialPower,
     required this.initialTarget,
     required this.currentKwh,
-    required this.startTime,
-    required this.endTime,
     required this.index,
   });
   @override
-  List<Object?> get props => [initialPower, initialTarget, currentKwh, startTime, endTime, index];
+  List<Object?> get props => [initialPower, initialTarget, currentKwh, index];
 }
 
 class GetDataFromFirebase extends RelaysEvent {}

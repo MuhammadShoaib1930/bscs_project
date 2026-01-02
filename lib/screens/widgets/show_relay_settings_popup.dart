@@ -1,4 +1,3 @@
-import 'package:bscs_project/core/helper.dart';
 import 'package:bscs_project/screens/relays_page/bloc/relays_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,14 +8,9 @@ Future<Future<Object?>> showRelaySettingsPopup(
   required int initialPower,
   required double initialTarget,
   required double currentKwh,
-  required String startTime,
-  required String endTime,
 }) async {
   final powerController = TextEditingController(text: initialPower.toString());
   final targetController = TextEditingController(text: initialTarget.toString());
-
-  String start = startTime;
-  String end = endTime;
 
   return showGeneralDialog(
     context: parentContext,
@@ -110,48 +104,6 @@ Future<Future<Object?>> showRelaySettingsPopup(
                       ),
 
                       const SizedBox(height: 16),
-
-                      /// START TIME
-                      ListTile(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        tileColor: Colors.grey.shade100,
-                        leading: const Icon(Icons.play_circle, color: Colors.green),
-                        title: Text("Start Time: $start"),
-                        onTap: () async {
-                          final t = await showTimePicker(
-                            context: context,
-                            initialTime: Helper.parseSafeTime(start),
-                          );
-                          if (t != null) {
-                            setState(() {
-                              start =
-                                  "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}";
-                            });
-                          }
-                        },
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      /// END TIME
-                      ListTile(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        tileColor: Colors.grey.shade100,
-                        leading: const Icon(Icons.stop_circle, color: Colors.red),
-                        title: Text("End Time: $end"),
-                        onTap: () async {
-                          final t = await showTimePicker(
-                            context: context,
-                            initialTime: Helper.parseSafeTime(end),
-                          );
-                          if (t != null) {
-                            setState(() {
-                              end =
-                                  "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}";
-                            });
-                          }
-                        },
-                      ),
                     ],
                   ),
                 );
@@ -177,8 +129,6 @@ Future<Future<Object?>> showRelaySettingsPopup(
                       initialPower: int.tryParse(powerController.text) ?? initialPower,
                       initialTarget: double.tryParse(targetController.text) ?? initialTarget,
                       currentKwh: currentKwh,
-                      startTime: start,
-                      endTime: end,
                     ),
                   );
                   Navigator.pop(parentContext);

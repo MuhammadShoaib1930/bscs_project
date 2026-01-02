@@ -95,14 +95,12 @@ class _RelaysPageState extends State<RelaysPage> {
                                       initialPower: state.power1,
                                       initialTarget: state.target1,
                                       currentKwh: state.currentKwh1,
-                                      startTime: state.startTime1,
-                                      endTime: state.endTime1,
                                     );
                                   },
                                 ),
                               ),
                             ),
-      
+
                             const SizedBox(height: 12),
                             Card(
                               elevation: 3,
@@ -136,14 +134,12 @@ class _RelaysPageState extends State<RelaysPage> {
                                       initialPower: state.power2,
                                       initialTarget: state.target2,
                                       currentKwh: state.currentKwh2,
-                                      startTime: state.startTime2,
-                                      endTime: state.endTime2,
                                     );
                                   },
                                 ),
                               ),
                             ),
-      
+
                             const SizedBox(height: 12),
                             Card(
                               elevation: 3,
@@ -177,14 +173,12 @@ class _RelaysPageState extends State<RelaysPage> {
                                       initialPower: state.power3,
                                       initialTarget: state.target3,
                                       currentKwh: state.currentKwh3,
-                                      startTime: state.startTime3,
-                                      endTime: state.endTime3,
                                     );
                                   },
                                 ),
                               ),
                             ),
-      
+
                             const SizedBox(height: 12),
                             Card(
                               elevation: 3,
@@ -218,14 +212,12 @@ class _RelaysPageState extends State<RelaysPage> {
                                       initialPower: state.power4,
                                       initialTarget: state.target4,
                                       currentKwh: state.currentKwh4,
-                                      startTime: state.startTime4,
-                                      endTime: state.endTime4,
                                     );
                                   },
                                 ),
                               ),
                             ),
-      
+
                             // const SizedBox(height: 12),
                             // ElevatedButton(
                             //   onPressed: () {

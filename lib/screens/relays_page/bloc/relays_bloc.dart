@@ -37,71 +37,43 @@ class RelaysBloc extends Bloc<RelaysEvent, RelaysState> {
   FutureOr<void> _changeSettingRelays(ChangeSettingRelays event, Emitter<RelaysState> emit) async {
     if (event.index == 1) {
       final ref = FirebaseDatabase.instance.ref("relay/r1");
-      await ref.update({
-        "power_watt": event.initialPower,
-        "target_kwh": event.initialTarget,
-        "start_time": event.startTime,
-        "end_time": event.endTime,
-      });
+      await ref.update({"power_watt": event.initialPower, "target_kwh": event.initialTarget});
 
       emit(
         state.copyWith(
           power1: event.initialPower,
           target1: event.initialTarget,
           currentKwh1: event.currentKwh,
-          startTime1: event.startTime,
-          endTime1: event.endTime,
         ),
       );
     } else if (event.index == 2) {
       final ref = FirebaseDatabase.instance.ref("relay/r2");
-      await ref.update({
-        "power_watt": event.initialPower,
-        "target_kwh": event.initialTarget,
-        "start_time": event.startTime,
-        "end_time": event.endTime,
-      });
+      await ref.update({"power_watt": event.initialPower, "target_kwh": event.initialTarget});
       emit(
         state.copyWith(
           power2: event.initialPower,
           target2: event.initialTarget,
           currentKwh2: event.currentKwh,
-          startTime2: event.startTime,
-          endTime2: event.endTime,
         ),
       );
     } else if (event.index == 3) {
       final ref = FirebaseDatabase.instance.ref("relay/r3");
-      await ref.update({
-        "power_watt": event.initialPower,
-        "target_kwh": event.initialTarget,
-        "start_time": event.startTime,
-        "end_time": event.endTime,
-      });
+      await ref.update({"power_watt": event.initialPower, "target_kwh": event.initialTarget});
       emit(
         state.copyWith(
           power3: event.initialPower,
           target3: event.initialTarget,
           currentKwh3: event.currentKwh,
-          startTime3: event.startTime,
-          endTime3: event.endTime,
         ),
       );
     } else if (event.index == 4) {
       final ref = FirebaseDatabase.instance.ref("relay/r4");
-      await ref.update({
-        "power_watt": event.initialPower,
-        "target_kwh": event.initialTarget,
-        "start_time": event.startTime,
-        "end_time": event.endTime,
-      });
+      await ref.update({"power_watt": event.initialPower, "target_kwh": event.initialTarget});
       emit(
         state.copyWith(
           power4: event.initialPower,
           target4: event.initialTarget,
           currentKwh4: event.currentKwh,
-          startTime4: event.startTime,
-          endTime4: event.endTime,
         ),
       );
     } else {
@@ -116,27 +88,19 @@ class RelaysBloc extends Bloc<RelaysEvent, RelaysState> {
         isOn1: relays["r1"]["status"],
         power1: relays["r1"]["power_watt"],
         target1: (relays["r1"]["target_kwh"] as num).toDouble(),
-        startTime1: relays["r1"]["start_time"],
         currentKwh1: (relays["r1"]["consumed_kwh"] as num).toDouble(),
-        endTime1: relays["r1"]["end_time"],
         isOn2: relays["r2"]["status"],
         power2: relays["r2"]["power_watt"],
         target2: (relays["r2"]["target_kwh"] as num).toDouble(),
-        startTime2: relays["r2"]["start_time"],
         currentKwh2: (relays["r2"]["consumed_kwh"] as num).toDouble(),
-        endTime2: relays["r2"]["end_time"],
         isOn3: relays["r3"]["status"],
         power3: relays["r3"]["power_watt"],
         target3: (relays["r3"]["target_kwh"] as num).toDouble(),
-        startTime3: relays["r3"]["start_time"],
         currentKwh3: (relays["r3"]["consumed_kwh"] as num).toDouble(),
-        endTime3: relays["r3"]["end_time"],
         isOn4: relays["r4"]["status"],
         power4: relays["r4"]["power_watt"],
         target4: (relays["r4"]["target_kwh"] as num).toDouble(),
-        startTime4: relays["r4"]["start_time"],
         currentKwh4: (relays["r4"]["consumed_kwh"] as num).toDouble(),
-        endTime4: relays["r4"]["end_time"],
       ),
     );
   }

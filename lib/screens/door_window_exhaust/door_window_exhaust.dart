@@ -132,8 +132,8 @@ class _DoorWindowExhaustState extends State<DoorWindowExhaust> {
                               subtitle: Slider(
                                 value: state.exhaust.toDouble(),
                                 min: 0,
-                                max: 100,
-                                divisions: 100,
+                                max: 1023,
+                                divisions: 1023,
                                 label: "${state.exhaust}%",
                                 onChanged: (value) {
                                   context.read<DoorWindowExhaustGasBloc>().add(
