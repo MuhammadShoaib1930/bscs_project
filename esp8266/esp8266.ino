@@ -49,7 +49,7 @@ struct SmartState {
     int lastDoorUser = 0;
     int lastWindowUser = 0;
     int gasThreshold = 400;  // default threshold
-    int gasValue = 0;         // Added for persistence
+    int gasValue = 0;        // Added for persistence
     unsigned long lastUpdate = 0;
 } state;
 
@@ -86,9 +86,7 @@ void checkFirebaseWiFiUpdate() {
     }
 
     // If Firebase WiFi changed
-    if (fbSsid != "" &&
-        (fbSsid != lastSsid || fbPass != lastPass)) {
-
+    if (fbSsid != "" && (fbSsid != lastSsid || fbPass != lastPass)) {
         log("[WIFI] Firebase WiFi changed → restarting");
         lastSsid = fbSsid;
         lastPass = fbPass;
@@ -108,9 +106,10 @@ void saveState() {
                  state.relay[i].on_time, state.relay[i].last_on,
                  state.relay[i].consumed_kwh);
     }
-    f.printf("%d,%d,%d,%d,%d,%d,%d,%d,%lu\n", state.door, state.window, state.exhaust,
-             state.lastDoorUser, state.lastWindowUser, state.lastExhaustUser,
-             state.gasThreshold, state.gasValue, state.lastUpdate);
+    f.printf("%d,%d,%d,%d,%d,%d,%d,%d,%lu\n", state.door, state.window,
+             state.exhaust, state.lastDoorUser, state.lastWindowUser,
+             state.lastExhaustUser, state.gasThreshold, state.gasValue,
+             state.lastUpdate);
     f.close();
     log("[FS] State saved");
 }
@@ -130,16 +129,17 @@ void loadState() {
     }
     char buf2[128];
     f.readBytesUntil('\n', buf2, sizeof(buf2));
-    sscanf(buf2, "%d,%d,%d,%d,%d,%d,%d,%d,%lu", &state.door, &state.window, &state.exhaust,
-           &state.lastDoorUser, &state.lastWindowUser, &state.lastExhaustUser,
-           &state.gasThreshold, &state.gasValue, &state.lastUpdate);
+    sscanf(buf2, "%d,%d,%d,%d,%d,%d,%d,%d,%lu", &state.door, &state.window,
+           &state.exhaust, &state.lastDoorUser, &state.lastWindowUser,
+           &state.lastExhaustUser, &state.gasThreshold, &state.gasValue,
+           &state.lastUpdate);
     f.close();
     log("[FS] State loaded");
 }
 
 void markOffline() {
     offlinePending = true;
-    saveState(); 
+    saveState();
     File f = LittleFS.open(QUEUE_FILE, "w");
     f.print("1");
     f.close();
@@ -242,10 +242,11 @@ void sendStateToFirebase() {
                                "/relay/r" + String(i + 1) + "/consumed_kwh",
                                state.relay[i].consumed_kwh);
     }
-
-    Firebase.RTDB.setInt(&fbdo, "/door", state.door);
-    Firebase.RTDB.setInt(&fbdo, "/window", state.window);
-    Firebase.RTDB.setInt(&fbdo, "/exhaust", state.exhaust);
+    if (state.gasRisk) {
+        Firebase.RTDB.setInt(&fbdo, "/door", state.door);
+        Firebase.RTDB.setInt(&fbdo, "/window", state.window);
+        Firebase.RTDB.setInt(&fbdo, "/exhaust", state.exhaust);
+    }
     Firebase.RTDB.setBool(&fbdo, "/gas/risk", state.gasRisk);
     Firebase.RTDB.setInt(&fbdo, "/gas/value", state.gasValue);
 
@@ -319,7 +320,8 @@ void setup() {
     } else {
         WiFi.softAP("general-Offline", "12345678");
         // Offline web server setup (example - add your routes here)
-        server.on("/", []() { server.send(200, "text/plain", "Offline Mode"); });
+        server.on("/",
+                  []() { server.send(200, "text/plain", "Offline Mode"); });
         server.begin();
         log("[SERVER] Offline server started");
     }
