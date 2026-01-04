@@ -1,351 +1,299 @@
-#include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
 #include <Firebase_ESP_Client.h>
-#include <LittleFS.h>
 #include <Servo.h>
-#include <WiFiManager.h>
+#include <EEPROM.h>
 
-/* ===================== PINS ===================== */
-#define RELAY1_PIN 5
-#define RELAY2_PIN 4
-#define RELAY3_PIN 0
-#define RELAY4_PIN 2
-#define EXHAUST_PIN 14
+/* ===================== RELAY PINS ===================== */
+#define RELAY1 5
+#define RELAY2 4
+#define RELAY3 0
+#define RELAY4 2
+#define RELAY5 14
+#define RELAY6 15
+#define RELAY7 16
+
+int relayPins[] = {RELAY1, RELAY2, RELAY3, RELAY4, RELAY5, RELAY6, RELAY7};
+bool relayState[7] = {0,0,0,0,0,0,0};
+
+/* ===================== SERVO PINS ===================== */
 #define DOOR_SERVO_PIN 12
-#define WIN_SERVO_PIN 13
-#define ELEC_PIN 16
-#define GAS_PIN A0
+#define WINDOW_SERVO_PIN 13
+
+Servo doorServo;
+Servo windowServo;
+
+int doorAngle = 0;
+int windowAngle = 0;
+bool apModeActive = false;
+/* ===================== GAS SENSOR ===================== */
+#define GAS_SENSOR_PIN A0
+int gasValue = 0;
 
 /* =================== FIREBASE =================== */
+
 #define API_KEY "AIzaSyDAXNldDqXCjQ7DN4ELNyOyLn72jJxokGY"
 #define DATABASE_URL "https://bscsproject-default-rtdb.firebaseio.com/"
+
 
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
-
-/* =================== OBJECTS =================== */
-ESP8266WebServer server(80);
-Servo doorServo;
-Servo windowServo;
-
-/* =================== STATE =================== */
-struct RelayState {
-    bool status = 0;            // ON/OFF
-    int power_watt = 100;       // User provided power in W
-    float target_kwh = 1.0;     // Target energy in kWh
-    unsigned long on_time = 0;  // Total ON time in ms
-    unsigned long last_on = 0;  // Last ON timestamp
-    float consumed_kwh = 0;     // Energy consumed
-};
-
-struct SmartState {
-    RelayState relay[4];
-    int door = 0;
-    int window = 0;
-    int exhaust = 0;
-    bool gasRisk = false;
-    int lastExhaustUser = 0;
-    int lastDoorUser = 0;
-    int lastWindowUser = 0;
-    int gasThreshold = 400;  // default threshold
-    int gasValue = 0;        // Added for persistence
-    unsigned long lastUpdate = 0;
-} state;
-
-bool offlinePending = false;
 bool firebaseReady = false;
 
-/* =================== FILES =================== */
-#define STATE_FILE "/state.txt"
-#define QUEUE_FILE "/queue.txt"
+/* =================== WEB SERVER =================== */
+ESP8266WebServer server(80);
 
-/* =================== HELPERS =================== */
-void log(String msg) { Serial.println(msg); }
+/* =================== WIFI EEPROM =================== */
+char savedSSID[32];
+char savedPASS[32];
 
-void checkFirebaseWiFiUpdate() {
-    static String lastSsid = "";
-    static String lastPass = "";
-
-    if (!firebaseReady) return;
-
-    String fbSsid = "";
-    String fbPass = "";
-
-    if (Firebase.RTDB.getString(&fbdo, "/wifi/ssid"))
-        fbSsid = fbdo.stringData();
-
-    if (Firebase.RTDB.getString(&fbdo, "/wifi/password"))
-        fbPass = fbdo.stringData();
-
-    // First-time sync
-    if (lastSsid == "" && lastPass == "") {
-        lastSsid = fbSsid;
-        lastPass = fbPass;
-        return;
-    }
-
-    // If Firebase WiFi changed
-    if (fbSsid != "" && (fbSsid != lastSsid || fbPass != lastPass)) {
-        log("[WIFI] Firebase WiFi changed → restarting");
-        lastSsid = fbSsid;
-        lastPass = fbPass;
-        delay(1000);
-        ESP.restart();
-    }
+void loadWiFiCreds() {
+  EEPROM.begin(96);
+  EEPROM.get(0, savedSSID);
+  EEPROM.get(32, savedPASS);
+  EEPROM.end();
 }
 
-/* =================== FILE SYSTEM =================== */
-void saveState() {
-    File f = LittleFS.open(STATE_FILE, "w");
-    if (!f) return;
-
-    for (int i = 0; i < 4; i++) {
-        f.printf("%d,%d,%.2f,%lu,%lu,%.3f\n", state.relay[i].status,
-                 state.relay[i].power_watt, state.relay[i].target_kwh,
-                 state.relay[i].on_time, state.relay[i].last_on,
-                 state.relay[i].consumed_kwh);
-    }
-    f.printf("%d,%d,%d,%d,%d,%d,%d,%d,%lu\n", state.door, state.window,
-             state.exhaust, state.lastDoorUser, state.lastWindowUser,
-             state.lastExhaustUser, state.gasThreshold, state.gasValue,
-             state.lastUpdate);
-    f.close();
-    log("[FS] State saved");
+void saveWiFiCreds(String ssid, String pass) {
+  EEPROM.begin(96);
+  ssid.toCharArray(savedSSID, 32);
+  pass.toCharArray(savedPASS, 32);
+  EEPROM.put(0, savedSSID);
+  EEPROM.put(32, savedPASS);
+  EEPROM.commit();
+  EEPROM.end();
+  ESP.restart(); // reboot after saving WiFi
 }
 
-void loadState() {
-    if (!LittleFS.exists(STATE_FILE)) return;
-    File f = LittleFS.open(STATE_FILE, "r");
-    if (!f) return;
-
-    for (int i = 0; i < 4; i++) {
-        char buf[64];
-        f.readBytesUntil('\n', buf, sizeof(buf));
-        sscanf(buf, "%d,%d,%f,%lu,%lu,%f", &state.relay[i].status,
-               &state.relay[i].power_watt, &state.relay[i].target_kwh,
-               &state.relay[i].on_time, &state.relay[i].last_on,
-               &state.relay[i].consumed_kwh);
-    }
-    char buf2[128];
-    f.readBytesUntil('\n', buf2, sizeof(buf2));
-    sscanf(buf2, "%d,%d,%d,%d,%d,%d,%d,%d,%lu", &state.door, &state.window,
-           &state.exhaust, &state.lastDoorUser, &state.lastWindowUser,
-           &state.lastExhaustUser, &state.gasThreshold, &state.gasValue,
-           &state.lastUpdate);
-    f.close();
-    log("[FS] State loaded");
-}
-
-void markOffline() {
-    offlinePending = true;
-    saveState();
-    File f = LittleFS.open(QUEUE_FILE, "w");
-    f.print("1");
-    f.close();
-    log("[QUEUE] Marked offline changes");
-}
-
-void clearOffline() {
-    offlinePending = false;
-    LittleFS.remove(QUEUE_FILE);
-    log("[QUEUE] Offline queue cleared");
-}
-
-/* =================== HARDWARE =================== */
+/* =================== APPLY HARDWARE =================== */
 void applyHardware() {
-    digitalWrite(RELAY1_PIN, state.relay[0].status);
-    digitalWrite(RELAY2_PIN, state.relay[1].status);
-    digitalWrite(RELAY3_PIN, state.relay[2].status);
-    digitalWrite(RELAY4_PIN, state.relay[3].status);
-    doorServo.write(state.door);
-    windowServo.write(state.window);
-    analogWrite(EXHAUST_PIN, state.exhaust);
+  Serial.println("---- RELAY & SERVO STATUS ----");
+  for(int i=0;i<7;i++){
+    digitalWrite(relayPins[i], relayState[i]);
+    Serial.print("Relay "); Serial.print(i+1); Serial.println(relayState[i] ? " : ON" : " : OFF");
+  }
+  doorServo.write(doorAngle);
+  windowServo.write(windowAngle);
+  gasValue = analogRead(GAS_SENSOR_PIN);
+  Serial.print("Door Angle: "); Serial.println(doorAngle);
+  Serial.print("Window Angle: "); Serial.println(windowAngle);
+  Serial.print("Gas Value: "); Serial.println(gasValue);
+  Serial.println("-------------------------------");
 }
 
-/* =================== WIFI =================== */
-void connectWiFi(String ssid = "", String pass = "") {
-    WiFiManager wm;
-    if (ssid != "" && pass != "") {
-        WiFi.begin(ssid, pass);
-        int count = 0;
-        while (WiFi.status() != WL_CONNECTED && count < 20) {
-            delay(500);
-            count++;
-        }
-        if (WiFi.status() == WL_CONNECTED) {
-            log("[WIFI] Connected via Firebase credentials");
-            return;
-        }
-    }
-    if (WiFi.status() != WL_CONNECTED) {
-        log("[WIFI] Starting config portal");
-        if (!wm.autoConnect("Setup", "12345678")) ESP.restart();
-    }
-    log("[WIFI] Connected: " + WiFi.SSID());
+/* =================== CONNECT WIFI =================== */
+bool connectToWiFi() {
+  loadWiFiCreds();
+  if(strlen(savedSSID) == 0) return false;
+  Serial.println("[WIFI] Connecting to saved SSID...");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(savedSSID, savedPASS);
+  int retries = 0;
+  while(WiFi.status() != WL_CONNECTED && retries < 20){
+    delay(500);
+    Serial.print(".");
+    retries++;
+  }
+  Serial.println();
+  if(WiFi.status() == WL_CONNECTED){
+    Serial.println("[WIFI] Connected: " + WiFi.SSID());
+    return true;
+  } else return false;
 }
 
-/* =================== FIREBASE =================== */
+/* =================== CONNECT FIREBASE =================== */
 void connectFirebase() {
-    config.api_key = API_KEY;
-    config.database_url = DATABASE_URL;
+  config.api_key = API_KEY;
+  config.database_url = DATABASE_URL;
 
-    Firebase.signUp(&config, &auth, "", "");
-    Firebase.begin(&config, &auth);
-    Firebase.reconnectWiFi(true);
-    firebaseReady = Firebase.ready();
-    log(firebaseReady ? "[FIREBASE] Connected" : "[FIREBASE] Failed");
+  Firebase.signUp(&config, &auth, "", "");
+  Firebase.begin(&config, &auth);
+  Firebase.reconnectWiFi(true);
+
+  firebaseReady = Firebase.ready();
+  Serial.println(firebaseReady ? "[FIREBASE] Ready" : "[FIREBASE] Failed");
 }
 
-/* =================== ENERGY MANAGEMENT =================== */
-void updateRelayEnergy(int i) {
-    RelayState& r = state.relay[i];
+/* =================== READ FROM FIREBASE =================== */
+void readFromFirebase() {
+  if(!firebaseReady) return;
 
-    // Only calculate if electricity available
-    if (digitalRead(ELEC_PIN) == HIGH && r.status) {
-        unsigned long now = millis();
-        if (r.last_on > 0) r.on_time += now - r.last_on;
-        r.last_on = now;
-        r.consumed_kwh =
-            (r.power_watt * r.on_time / 3600000.0) / 1000.0;  // kWh
-        if (r.consumed_kwh >= r.target_kwh) {
-            r.status = 0;  // Turn OFF relay
-            markOffline();
-        }
-    } else {
-        r.last_on = 0;  // Reset if no electricity
-    }
+  for(int i=0;i<7;i++){
+    String path = "/relay/r"+String(i+1);
+    if(Firebase.RTDB.getBool(&fbdo, path)) relayState[i] = fbdo.boolData();
+  }
+
+  if(Firebase.RTDB.getInt(&fbdo, "/servo/door")) doorAngle = fbdo.intData();
+  if(Firebase.RTDB.getInt(&fbdo, "/servo/window")) windowAngle = fbdo.intData();
+
+  Firebase.RTDB.setInt(&fbdo, "/sensor/gas", gasValue);
+
+  applyHardware();
 }
 
-void scheduleRelays() {
-    for (int i = 0; i < 4; i++) {
-        updateRelayEnergy(i);
+/* =================== OFFLINE SERVER =================== */
+void setupOfflineServer() {
+  server.on("/", [](){
+    String page = "<!DOCTYPE html><html><head>";
+    page += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
+    page += "<title>ESP8266 Control</title>";
+    page += "<style>";
+    page += "body{font-family: Arial; background-color:#f0f2f5; text-align:center;}";
+    page += "h2{color:#333;}";
+    page += "h3{color:#555; margin-top:20px;}";
+    page += "button{padding:10px 20px; margin:5px; font-size:16px; border:none; border-radius:5px; cursor:pointer;}";
+    page += ".relay-on{background-color:#28a745; color:white;}";
+    page += ".relay-off{background-color:#dc3545; color:white;}";
+    page += "input[type=number]{width:60px; padding:5px; margin-right:5px;}";
+    page += "input[type=text], input[type=password]{padding:5px; width:150px; margin:5px;}";
+    page += "</style>";
+    page += "<script>";
+    page += "function toggleRelay(i){";
+    page += "  var xhttp = new XMLHttpRequest();";
+    page += "  xhttp.onreadystatechange = function(){";
+    page += "    if(this.readyState == 4 && this.status == 200){";
+    page += "      var btn = document.getElementById('r'+i);";
+    page += "      if(btn.classList.contains('relay-on')){btn.className='relay-off'; btn.innerHTML='Relay '+i+': OFF';}";
+    page += "      else{btn.className='relay-on'; btn.innerHTML='Relay '+i+': ON';}";
+    page += "    }";
+    page += "  };";
+    page += "  xhttp.open('GET','/r'+i,true); xhttp.send();";
+    page += "}";
+
+    page += "function setDoor(){";
+    page += "  var val = document.getElementById('doorVal').value;";
+    page += "  var xhttp = new XMLHttpRequest();";
+    page += "  xhttp.open('GET','/door?a='+val,true); xhttp.send();";
+    page += "}";
+
+    page += "function setWindow(){";
+    page += "  var val = document.getElementById('windowVal').value;";
+    page += "  var xhttp = new XMLHttpRequest();";
+    page += "  xhttp.open('GET','/window?a='+val,true); xhttp.send();";
+    page += "}";
+    page += "</script></head><body>";
+
+    page += "<h2>ESP8266 Offline Control / WiFi Setup</h2>";
+
+    // WiFi Setup
+    page += "<h3>Set WiFi</h3>";
+    page += "<form action='/savewifi' method='get'>";
+    page += "SSID: <input type='text' name='s' value='" + String(savedSSID) + "'><br>";
+    page += "PASS: <input type='password' name='p' value='" + String(savedPASS) + "'><br>";
+    page += "<input type='submit' value='Save WiFi' style='padding:10px 20px; margin-top:10px;'>";
+    page += "</form><hr>";
+
+    // Relays
+    page += "<h3>Relays</h3>";
+    for(int i=0;i<7;i++){
+      String btnClass = relayState[i] ? "relay-on" : "relay-off";
+      String btnText = relayState[i] ? "ON" : "OFF";
+      page += "<button id='r"+String(i+1)+"' class='"+btnClass+"' onclick='toggleRelay(" + String(i+1) + ")'>Relay "+String(i+1)+": "+btnText+"</button>";
     }
+    page += "<hr>";
+
+    // Door Servo
+    page += "<h3>Door Servo</h3>";
+    page += "<input type='number' id='doorVal' min='0' max='180' value='" + String(doorAngle) + "'>";
+    page += "<button onclick='setDoor()'>Set Door Angle</button><hr>";
+
+    // Window Servo
+    page += "<h3>Window Servo</h3>";
+    page += "<input type='number' id='windowVal' min='0' max='180' value='" + String(windowAngle) + "'>";
+    page += "<button onclick='setWindow()'>Set Window Angle</button><hr>";
+
+    // Gas Sensor
+    page += "<h3>Gas Sensor Value</h3>";
+    page += "<p style='font-size:20px; color:#333;'>" + String(gasValue) + "</p>";
+
+    page += "</body></html>";
+
+    server.send(200,"text/html",page);
+  });
+
+  server.on("/savewifi", [](){
+    String s = server.arg("s");
+    String p = server.arg("p");
+    if(s.length()>0) saveWiFiCreds(s,p);
+    server.send(200,"text/plain","WiFi saved! Device will reboot.");
+  });
+
+  server.on("/door", [](){
+    doorAngle = server.arg("a").toInt();
     applyHardware();
-}
+    server.send(200,"text/plain","Door angle set");
+  });
 
-/* =================== SEND STATE =================== */
-void sendStateToFirebase() {
-    if (!firebaseReady) return;
-    unsigned long now = millis();
-    if (now - state.lastUpdate < 500) return;
-
-    for (int i = 0; i < 4; i++) {
-        Firebase.RTDB.setBool(&fbdo, "/relay/r" + String(i + 1) + "/status",
-                              state.relay[i].status);
-        Firebase.RTDB.setInt(&fbdo, "/relay/r" + String(i + 1) + "/power_watt",
-                             state.relay[i].power_watt);
-        Firebase.RTDB.setFloat(&fbdo,
-                               "/relay/r" + String(i + 1) + "/target_kwh",
-                               state.relay[i].target_kwh);
-        Firebase.RTDB.setFloat(&fbdo,
-                               "/relay/r" + String(i + 1) + "/consumed_kwh",
-                               state.relay[i].consumed_kwh);
-    }
-    if (state.gasRisk) {
-        Firebase.RTDB.setInt(&fbdo, "/door", state.door);
-        Firebase.RTDB.setInt(&fbdo, "/window", state.window);
-        Firebase.RTDB.setInt(&fbdo, "/exhaust", state.exhaust);
-    }
-    Firebase.RTDB.setBool(&fbdo, "/gas/risk", state.gasRisk);
-    Firebase.RTDB.setInt(&fbdo, "/gas/value", state.gasValue);
-
-    clearOffline();
-    state.lastUpdate = now;
-    log("[SYNC] Local → Firebase complete");
-}
-
-/* =================== SENSORS =================== */
-void gasCheck() {
-    state.gasValue = analogRead(GAS_PIN);
-
-    if (firebaseReady) {
-        int t;
-        if (Firebase.RTDB.getInt(&fbdo, "/gas/threshold"))
-            t = fbdo.intData();
-        else
-            t = state.gasThreshold;
-        state.gasThreshold = t;
-    }
-
-    bool risk = state.gasValue > state.gasThreshold;
-    if (risk != state.gasRisk) {
-        state.gasRisk = risk;
-        markOffline();
-    }
-
-    if (state.gasRisk) {
-        state.door = 90;
-        state.window = 90;
-        state.exhaust =
-            map(state.gasValue, state.gasThreshold, 1023, 200, 1023);
-    } else {
-        state.door = state.lastDoorUser;
-        state.window = state.lastWindowUser;
-        state.exhaust = state.lastExhaustUser;
-    }
+  server.on("/window", [](){
+    windowAngle = server.arg("a").toInt();
     applyHardware();
+    server.send(200,"text/plain","Window angle set");
+  });
+
+  for(int i=0;i<7;i++){
+    server.on("/r"+String(i+1), [i](){
+      relayState[i] = !relayState[i];
+      applyHardware();
+      server.send(200,"text/plain","Relay toggled");
+    });
+  }
+
+  server.begin();
+  Serial.println("[SERVER] Offline server started, AP mode active");
 }
+
+void startAPMode() {
+    if(apModeActive) return; // Already in AP mode
+  apModeActive = true;
+  WiFi.disconnect();
+  WiFi.mode(WIFI_AP);
+  WiFi.softAPConfig(IPAddress(192,168,4,1), IPAddress(192,168,4,1), IPAddress(255,255,255,0));
+  WiFi.softAP("ESP-Offline", "12345678");
+  setupOfflineServer();
+  Serial.println("[WIFI] Switched to AP Mode due to WiFi disconnect");
+}
+
 
 /* =================== SETUP =================== */
 void setup() {
-    Serial.begin(115200);
-    log("[BOOT] ESP8266 Starting");
+  Serial.begin(115200);
 
-    pinMode(RELAY1_PIN, OUTPUT);
-    pinMode(RELAY2_PIN, OUTPUT);
-    pinMode(RELAY3_PIN, OUTPUT);
-    pinMode(RELAY4_PIN, OUTPUT);
-    pinMode(EXHAUST_PIN, OUTPUT);
-    pinMode(ELEC_PIN, INPUT_PULLUP);  // Added pull-up for stability
+  for(int i=0;i<7;i++){
+    pinMode(relayPins[i], OUTPUT);
+    digitalWrite(relayPins[i], LOW);
+    relayState[i] = false;
+  }
 
-    doorServo.attach(DOOR_SERVO_PIN);
-    windowServo.attach(WIN_SERVO_PIN);
+  pinMode(GAS_SENSOR_PIN, INPUT);
 
-    if (!LittleFS.begin()) {
-        log("[FS] LittleFS mount failed!");
-    }
-    loadState();
-    applyHardware();
+  doorServo.attach(DOOR_SERVO_PIN);
+  windowServo.attach(WINDOW_SERVO_PIN);
 
-    connectWiFi();  // Use WiFiManager for initial connection
+  applyHardware();
 
-    if (WiFi.status() == WL_CONNECTED) {
-        connectFirebase();
-        // Sync current WiFi to Firebase after connection
-        Firebase.RTDB.setString(&fbdo, "/wifi/ssid", WiFi.SSID());
-        Firebase.RTDB.setString(&fbdo, "/wifi/password", WiFi.psk());
-
-        if (LittleFS.exists(QUEUE_FILE)) sendStateToFirebase();
-    } else {
-        WiFi.softAP("general-Offline", "12345678");
-        // Offline web server setup (example - add your routes here)
-        server.on("/",
-                  []() { server.send(200, "text/plain", "Offline Mode"); });
-        server.begin();
-        log("[SERVER] Offline server started");
-    }
+  if(!connectToWiFi()){ // AP + offline mode
+    WiFi.mode(WIFI_AP);
+    WiFi.softAPConfig(IPAddress(192,168,4,1), IPAddress(192,168,4,1), IPAddress(255,255,255,0));
+    WiFi.softAP("ESP-Offline", "12345678");
+    setupOfflineServer();
+  } else { // Online mode
+    connectFirebase();
+  }
 }
 
 /* =================== LOOP =================== */
 void loop() {
-    if (WiFi.status() != WL_CONNECTED) {
-        server.handleClient();
-    } else {
-        // Turn off AP mode if WiFi is connected
-        if (WiFi.softAPgetStationNum() > 0) {  // Check if AP is active
-            WiFi.softAPdisconnect(true);
-            log("[AP] AP mode turned off due to WiFi connection");
-        }
-        if (!firebaseReady) {
-            connectFirebase();
-            if (firebaseReady && offlinePending) sendStateToFirebase();
-        }
-        sendStateToFirebase();
-        checkFirebaseWiFiUpdate();
+  // Check WiFi and Firebase
+  if(WiFi.status() == WL_CONNECTED && firebaseReady){
+    readFromFirebase();
+  } else {
+    // If WiFi disconnected, switch to AP mode dynamically
+    if(WiFi.status() != WL_CONNECTED){
+      startAPMode();
     }
+    server.handleClient(); // Handle offline server requests
+  }
 
-    scheduleRelays();  // Energy management only if electricity available
-    gasCheck();
-    delay(300);
+  delay(500);
 }
