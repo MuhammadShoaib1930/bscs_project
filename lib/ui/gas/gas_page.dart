@@ -1,5 +1,10 @@
+import 'package:bscs_project/bloc/settings/settings_bloc.dart';
+import 'package:bscs_project/bloc/settings/settings_state.dart';
+import 'package:bscs_project/constants/app_constants.dart';
+import 'package:bscs_project/ui/gas/bloc/gas_bloc.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class GasPage extends StatefulWidget {
   const GasPage({super.key});
@@ -8,94 +13,213 @@ class GasPage extends StatefulWidget {
   State<GasPage> createState() => _GasPageState();
 }
 
-class _GasPageState extends State<GasPage> {
-  int gasValue = 0;
-
+class _GasPageState extends State<GasPage> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
-    // Example: Simulate gas reading change
-    // In real app, replace with your Firebase or ESP data
-    gasValue = (gasValue + 1) % 1024;
+    return BlocBuilder<SettingsBloc, SettingsState>(
+      builder: (context, settingsState) {
+        final font = settingsState.settingsModel.fontFamily;
+        final fontSize = settingsState.settingsModel.fontSize;
+        final isDark = settingsState.settingsModel.isDarkMode;
 
-    // Determine color based on gas value
-    Color gaugeColor;
-    if (gasValue < 300) {
-      gaugeColor = Colors.green;
-    } else if (gasValue < 700) {
-      gaugeColor = Colors.orange;
-    } else {
-      gaugeColor = Colors.red;
-    }
+        return Scaffold(
+          appBar: AppBar(
+            centerTitle: true,
+            title: Text(
+              AppConstants.gasPageTitle,
+              style: TextStyle(
+                fontFamily: font,
+                fontSize: fontSize + 2,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [Colors.deepPurple.shade700, Colors.deepPurple.shade900]
+                      : [Colors.purpleAccent, Colors.deepPurpleAccent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+            elevation: 4,
+          ),
+          body: BlocBuilder<GasBloc, GasState>(
+            builder: (context, gasState) {
+              if (gasState is GasLoadedState) {
+                Color gaugeColor;
+                String warningText;
+                if ((gasState.gasValue + 1) % 1024 < 300) {
+                  gaugeColor = Colors.green;
+                  warningText = AppConstants.warning1Text;
+                } else if ((gasState.gasValue + 1) % 1024 < 700) {
+                  gaugeColor = Colors.orange;
+                  warningText = AppConstants.warning2Text;
+                } else if ((gasState.gasValue + 1) % 1024 < 900) {
+                  gaugeColor = Colors.redAccent;
+                  warningText = AppConstants.warning3Text;
+                } else {
+                  gaugeColor = Colors.red.shade900;
+                  warningText = AppConstants.warning4Text;
+                }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gas Sensor'),
-        centerTitle: true,
-        backgroundColor: Colors.deepPurple,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Gas Level', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 30),
-
-            // Circular gauge
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Background circle
-                  Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey.shade200),
-                  ),
-
-                  // Arc indicator
-                  Transform.rotate(
-                    angle: -pi / 2,
-                    child: CustomPaint(
-                      size: const Size(200, 200),
-                      painter: _GaugePainter(gasValue.toDouble(), gaugeColor),
-                    ),
-                  ),
-
-                  // Value display
-                  Column(
+                return Center(
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        '$gasValue',
+                        warningText,
                         style: TextStyle(
-                          fontSize: 36,
+                          fontFamily: font,
+                          fontSize: fontSize + 4,
                           fontWeight: FontWeight.bold,
                           color: gaugeColor,
                         ),
+                        textAlign: TextAlign.center,
                       ),
-                      const Text('PPM', style: TextStyle(fontSize: 16, color: Colors.black54)),
+                      const SizedBox(height: 20),
+                      AnimatedGauge(
+                        value: gasState.gasValue.toDouble(),
+                        color: gaugeColor,
+                        font: font,
+                        fontSize: fontSize,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'PPM: ${gasState.gasValue}',
+                        style: TextStyle(
+                          fontFamily: font,
+                          fontSize: fontSize,
+                          color: Colors.grey[700],
+                        ),
+                      ),
                     ],
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-            const Text(
-              'Green: Safe | Orange: Medium | Red: Danger',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+                );
+              } else {
+                return const Center(child: CircularProgressIndicator());
+              }
+            },
+          ),
+        );
+      },
     );
   }
 }
 
-// Custom Painter for the gauge arc
+class AnimatedGauge extends StatefulWidget {
+  final double value;
+  final Color color;
+  final String font;
+  final double fontSize;
+
+  const AnimatedGauge({
+    super.key,
+    required this.value,
+    required this.color,
+    required this.font,
+    required this.fontSize,
+  });
+
+  @override
+  State<AnimatedGauge> createState() => _AnimatedGaugeState();
+}
+
+class _AnimatedGaugeState extends State<AnimatedGauge> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  double oldValue = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _animation = Tween<double>(
+      begin: oldValue,
+      end: widget.value,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(covariant AnimatedGauge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _animation = Tween<double>(
+      begin: oldWidget.value,
+      end: widget.value,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _controller
+      ..reset()
+      ..forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 220,
+      height: 220,
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 220,
+                height: 220,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey.shade200,
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(4, 4)),
+                  ],
+                ),
+              ),
+              Transform.rotate(
+                angle: -pi / 2,
+                child: CustomPaint(
+                  size: const Size(220, 220),
+                  painter: _GaugePainter(_animation.value, widget.color),
+                ),
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${_animation.value.toInt()}',
+                    style: TextStyle(
+                      fontFamily: widget.font,
+                      fontSize: widget.fontSize + 6,
+                      fontWeight: FontWeight.bold,
+                      color: widget.color,
+                    ),
+                  ),
+                  Text(
+                    'PPM',
+                    style: TextStyle(
+                      fontFamily: widget.font,
+                      fontSize: widget.fontSize,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
 class _GaugePainter extends CustomPainter {
   final double value;
   final Color color;
@@ -106,10 +230,10 @@ class _GaugePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
     final startAngle = 0.0;
-    final sweepAngle = 2 * pi * (value / 1024); 
+    final sweepAngle = 2 * pi * (value / 1024);
     final paint = Paint()
       ..color = color
-      ..strokeWidth = 20
+      ..strokeWidth = 18
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 

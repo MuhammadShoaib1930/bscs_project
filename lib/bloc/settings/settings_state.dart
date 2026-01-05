@@ -1,15 +1,15 @@
-class SettingsState {
-  final bool isDarkMode;
-  final double fontSize;
-  final String fontFamily;
+import 'package:equatable/equatable.dart';
+import '../../hive/settings_model.dart';
 
-  SettingsState({required this.isDarkMode, required this.fontSize, required this.fontFamily});
+class SettingsState extends Equatable {
+  final SettingsModel settingsModel;
 
-  SettingsState copyWith({bool? isDarkMode, double? fontSize, String? fontFamily}) {
-    return SettingsState(
-      isDarkMode: isDarkMode ?? this.isDarkMode,
-      fontSize: fontSize ?? this.fontSize,
-      fontFamily: fontFamily ?? this.fontFamily,
-    );
+  const SettingsState({required this.settingsModel});
+
+  SettingsState copyWith({SettingsModel? settingsModel}) {
+    return SettingsState(settingsModel: settingsModel ?? this.settingsModel);
   }
+
+  @override
+  List<Object?> get props => [settingsModel];
 }
