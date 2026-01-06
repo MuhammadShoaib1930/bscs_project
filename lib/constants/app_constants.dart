@@ -19,4 +19,6 @@ class AppConstants {
       'Control each relay individually. Tap the buttons to switch ON or OFF.';
   static final String servoPageTitle = 'Servo Control';
   static final String servoPageSubTitle = 'Control Door & Window Servos';
+  static final String splashPageDescription = "ESP8266 • Firebase • Offline Mode";
+  static final String splashPageSubtitle = "Smart IoT";
 }

@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.lightTheme(state.settingsModel.fontFamily, state.settingsModel.fontSize),
           darkTheme: AppTheme.darkTheme(state.settingsModel.fontFamily, state.settingsModel.fontSize),
           themeMode: state.settingsModel.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-          initialRoute: AppRoutes.home,
+          initialRoute: AppRoutes.splash,
           routes: AppRoutes.routes,
         );
       },
