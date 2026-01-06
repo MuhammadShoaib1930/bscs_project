@@ -1,54 +1,63 @@
-📱 BSCS Smart Home Automation System (Flutter + ESP8266)
-📌 Project Description (GitHub “About” Section)
+📱 BSCS Smart Home Automation System
+
+Flutter + ESP8266
+
+📌 Project Overview
 
 A Smart Home Automation System built using Flutter and ESP8266.
-The system allows users to control relays, servos (door/window), and monitor gas sensor values using a Flutter Android application with Firebase integration.
-Offline control is supported via ESP8266 Access Point mode with a built-in web interface.
+The system allows users to control relays, operate servo-based doors/windows, and monitor gas sensor data through an Android application.
 
-📑 README.md (Complete & Logical)
-🔹 1. Introduction
+It supports:
 
-This project is a Smart Home Automation System developed as part of a BSCS academic project.
-It integrates Flutter (Android app) with ESP8266 microcontroller to control home appliances and monitor sensor data.
+Online control via Firebase Realtime Database
 
-The system supports:
+Offline control using ESP8266 WiFi Access Point with a built-in web interface
 
-Online mode using Firebase Realtime Database
+This project was developed as part of a BSCS academic project, but it is designed to be extendable and open for community contributions.
 
-Offline mode using ESP8266 WiFi Access Point and web server
+🧩 Key Objectives
 
-🔹 2. System Architecture
+Automate home appliances using a mobile app
 
-The project consists of three main layers:
+Enable real-time monitoring and control
 
-Mobile Application (Flutter)
+Support offline usage without internet
 
-Backend (Firebase Realtime Database)
+Use clean architecture and scalable state management
 
-Hardware Layer (ESP8266 + Sensors + Relays + Servos)
+🏗 System Architecture
+🔹 Application Layers
+
+Mobile Application – Flutter (Android)
+
+Backend – Firebase Realtime Database
+
+Hardware Layer – ESP8266 + Sensors + Relays + Servos
 
 🔁 Data Flow
 Flutter App → Firebase → ESP8266 → Hardware
 Hardware → ESP8266 → Firebase → Flutter App
 
-🔹 3. Features
+✨ Features
 📱 Flutter Application
 
-Android APK built using Flutter
+Android APK built with Flutter
 
-Clean UI with multiple modules
+Modular UI design
 
 Real-time device control
 
-State management using BLoC pattern
+BLoC pattern for state management
 
-Firebase integration
+Firebase Realtime Database integration
+
+Local storage using Hive
 
 🔌 ESP8266 Hardware Control
 
-7 Relay outputs (appliances)
+7 relay outputs for appliances
 
-2 Servo motors (Door & Window)
+2 servo motors (Door & Window automation)
 
 Gas sensor monitoring
 
@@ -56,116 +65,43 @@ EEPROM-based WiFi credential storage
 
 🌐 Offline Mode
 
-ESP8266 creates its own WiFi AP
+ESP8266 creates its own WiFi Access Point
 
-Built-in web interface
+Web-based control panel
 
 Relay & servo control via browser
 
-WiFi setup page
+WiFi configuration page
 
-🔹 4. Folder Structure
-📂 Flutter Application
-📁 lib
-    📄 app.dart
-    📄 main.dart
-    📁 bloc
-      📁 settings
-        📄 settings_bloc.dart
-        📄 settings_event.dart
-        📄 settings_state.dart
-    📁 constants
-      📄 app_constants.dart
-    📁 hive
-      📄 hive_manager.dart
-      📄 settings_model.dart
-      📄 settings_model.g.dart
-    📁 routes
-      📄 app_routes.dart
-    📁 theme
-      📄 app_theme.dart
-    📁 ui
-      📁 gas
-        📁 bloc
-          📄 gas_bloc.dart
-          📄 gas_event.dart
-          📄 gas_state.dart
-        📄 gas_page.dart
-      📁 home
-        📄 home_page.dart
-      📁 relays
-        📁 bloc
-          📄 relays_bloc.dart
-          📄 relays_event.dart
-          📄 relays_state.dart
-        📄 relays_page.dart
-      📁 servo
-        📁 bloc
-          📄 servo_bloc.dart
-          📄 servo_event.dart
-          📄 servo_state.dart
-        📄 servo_page.dart
-      📁 splash
-        📄 splash_screen.dart
-      📁 widgets
-        📄 drawer_widget.dart
-📁 assets
-    📁 image
-        📄 app_icon.png
-📂 ESP8266 Firmware
+📂 Project Structure
+📁 Flutter Application
+lib/
+ ├── main.dart
+ ├── app.dart
+ ├── bloc/
+ │   └── settings/
+ ├── constants/
+ ├── hive/
+ ├── routes/
+ ├── theme/
+ └── ui/
+     ├── gas/
+     ├── home/
+     ├── relays/
+     ├── servo/
+     ├── splash/
+     └── widgets/
+
+📁 ESP8266 Firmware
 esp8266/
  └── esp8266.ino
- 
-📄 pubspec.yaml
-  package used
-    cupertino_icons: ^1.0.8
-    firebase_core: ^4.3.0
-    firebase_database: ^12.1.1
-    flutter_bloc: ^9.1.1
-    equatable: ^2.0.7
-    hive_flutter: ^1.1.0
-    path_provider: ^2.1.5
-    http: ^1.6.0
-    hive: ^2.2.3
-    build_runner: ^2.4.13
-    hive_generator: ^2.0.1
 
-[√] Flutter (Channel stable, 3.35.7, on Microsoft Windows [Version 10.0.26200.7462], locale en-US) [555ms]
-    • Flutter version 3.35.7 on channel stable at C:\program_files\flutter
-    • Upstream repository https://github.com/flutter/flutter.git
-    • Framework revision adc9010625 (3 months ago), 2025-10-21 14:16:03 -0400
-    • Engine revision 035316565a
-    • Dart version 3.9.2
-    • DevTools version 2.48.0
-    • Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios,
-      cli-animations, enable-lldb-debugging
+📁 Assets
+assets/
+ └── image/
+     └── app_icon.png
 
-[√] Windows Version (Windows 11 or higher, 25H2, 2009) [2.1s]
-
-[√] Android toolchain - develop for Android devices (Android SDK version 36.1.0) [3.1s]
-    • Android SDK at C:\Users\shoai\AppData\Local\Android\sdk
-    • Emulator version 36.2.12.0 (build_id 14214601) (CL:N/A)
-    • Platform android-36, build-tools 36.1.0
-    • Java binary at: C:\Program Files\Java\jdk-17\bin\java
-      This JDK is specified in your Flutter configuration.
-      To change the current JDK, run: `flutter config --jdk-dir="path/to/jdk"`.
-    • Java version Java(TM) SE Runtime Environment (build 17.0.15+9-LTS-241)
-    • All Android licenses accepted.
-
-[√] Android Studio (version 2025.1.4) [18ms]
-    • Android Studio at C:\Program Files\Android\Android Studio
-    • Flutter plugin can be installed from:
-       https://plugins.jetbrains.com/plugin/9212-flutter
-    • Dart plugin can be installed from:
-       https://plugins.jetbrains.com/plugin/6351-dart
-    • Java version OpenJDK Runtime Environment (build 21.0.8+-14018985-b1038.68)
-
-[√] VS Code (version 1.107.1) [15ms]
-    • VS Code at C:\Users\shoai\AppData\Local\Programs\Microsoft VS Code
-    • Flutter extension version 3.126.0
-
-
-🔹 5. Technologies Used
+🧪 Technologies Used
 🧑‍💻 Software
 
 Flutter (Dart)
@@ -186,7 +122,8 @@ Servo Motors
 
 Gas Sensor (MQ Series)
 
-🔹 6. Dependencies (Flutter)
+📦 Flutter Dependencies
+Dependencies
 firebase_core
 firebase_database
 flutter_bloc
@@ -200,7 +137,7 @@ Dev Dependencies
 build_runner
 hive_generator
 
-🔹 7. ESP8266 Logic Overview
+⚙ ESP8266 Logic Overview
 🔸 Online Mode
 
 Connects to saved WiFi
@@ -213,27 +150,27 @@ Sends gas sensor data to Firebase
 
 Automatically switches to AP mode if WiFi fails
 
-Hosts a web server on 192.168.4.1
+Hosts web server at 192.168.4.1
 
-Allows:
+Supports:
 
 Relay control
 
 Servo angle control
 
-WiFi credential setup
+WiFi setup
 
-🔹 8. How to Build Android APK
+🏗 Build Android APK
 flutter clean
 flutter pub get
 flutter build apk --release
 
 
-APK output:
+📦 Output:
 
 build/app/outputs/flutter-apk/app-release.apk
 
-🔹 9. How to Upload ESP8266 Code
+🔌 Upload ESP8266 Code
 
 Open esp8266.ino in Arduino IDE
 
@@ -243,32 +180,24 @@ Select correct COM port
 
 Upload code
 
-🔹 10. Future Improvements
+🚀 Future Improvements
 
 User authentication
 
 Push notifications
 
-Energy monitoring
+Energy consumption monitoring
 
 Voice control
 
-OTA updates for ESP8266
+OTA firmware updates
 
-🔹 11. Author
+👨‍💻 Author
 
 Muhammad Shoaib
 BSCS Student
 GitHub: MuhammadShoaib1930
 
-🔹 12. License
+📜 License
 
 This project is for educational purposes only.
-
-✅ Why this README is GOOD (Exam + GitHub)
-
-✔ Clear architecture
-✔ Logical flow
-✔ Professional headings
-✔ Explains both Flutter & ESP8266
-✔ Easy for examiner to understand
