@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:bscs_project/constants/app_constants.dart';
 import 'package:bscs_project/routes/app_routes.dart';
 import 'package:bscs_project/ui/widgets/drawer_widget.dart';

@@ -1,3 +1,5 @@
+// ignore_for_file: empty_catches
+
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
@@ -47,6 +49,7 @@ class RelaysBloc extends Bloc<RelaysEvent, RelaysState> {
     try {
         await FirebaseDatabase.instance.ref('relay/r${event.relayIndex}').set(event.relayState);
         add(RelayGetStateEvent());
-    } catch (e) {}
+    } catch (e) {
+    }
   }
 }

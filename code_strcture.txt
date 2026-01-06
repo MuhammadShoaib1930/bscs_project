@@ -1,0 +1,62 @@
+📁 lib
+    📄 app.dart
+    📄 main.dart
+    📁 bloc
+      📁 settings
+        📄 settings_bloc.dart
+        📄 settings_event.dart
+        📄 settings_state.dart
+    📁 constants
+      📄 app_constants.dart
+    📁 hive
+      📄 hive_manager.dart
+      📄 settings_model.dart
+      📄 settings_model.g.dart
+    📁 routes
+      📄 app_routes.dart
+    📁 theme
+      📄 app_theme.dart
+    📁 ui
+      📁 gas
+        📁 bloc
+          📄 gas_bloc.dart
+          📄 gas_event.dart
+          📄 gas_state.dart
+        📄 gas_page.dart
+      📁 home
+        📄 home_page.dart
+      📁 relays
+        📁 bloc
+          📄 relays_bloc.dart
+          📄 relays_event.dart
+          📄 relays_state.dart
+        📄 relays_page.dart
+      📁 servo
+        📁 bloc
+          📄 servo_bloc.dart
+          📄 servo_event.dart
+          📄 servo_state.dart
+        📄 servo_page.dart
+      📁 splash
+        📄 splash_screen.dart
+      📁 widgets
+        📄 drawer_widget.dart
+📁 esp8266
+    📄 esp8266.ino
+📁 assets
+    📁 image
+        📄 app_icon.png
+
+📄 pubspec.yaml
+  package used
+    cupertino_icons: ^1.0.8
+    firebase_core: ^4.3.0
+    firebase_database: ^12.1.1
+    flutter_bloc: ^9.1.1
+    equatable: ^2.0.7
+    hive_flutter: ^1.1.0
+    path_provider: ^2.1.5
+    http: ^1.6.0
+    hive: ^2.2.3
+    build_runner: ^2.4.13
+    hive_generator: ^2.0.1

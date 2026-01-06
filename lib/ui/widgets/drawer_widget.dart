@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:bscs_project/bloc/settings/settings_bloc.dart';
 import 'package:bscs_project/bloc/settings/settings_event.dart';
 import 'package:bscs_project/bloc/settings/settings_state.dart';
