@@ -9,10 +9,11 @@ class AppConstants {
   static final String homePageSubTitle = "Welcome To IoT Manual Control System";
   static final String homePageDescription =
       'Control relays, servos, and gas sensors from your mobile app.';
-  static final String warning1Text = "Safe: Low Gas Level";
-  static final String warning2Text = "Warning: Moderate Gas Level";
-  static final String warning3Text = "Danger: High Gas Level";
-  static final String warning4Text = "Critical: Extremely High Gas Level!";
+  static final String warningNormal = "Safe: Low Gas Level";
+  static final String warningModerate = "Warning: Moderate Gas Level";
+  static final String warningHigh = "Danger: High Gas Level";
+  static final String warningExtremelyHigh = "Critical: Extremely High Gas Level!";
+  static final String warningProblam = "Critical: Sensor is not working!";
   static final String gasPageTitle = 'Gas Sensor';
   static final String relayPageTitle = 'Relays Control';
   static final String relayPageDescription =

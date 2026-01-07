@@ -51,18 +51,21 @@ class _GasPageState extends State<GasPage> with SingleTickerProviderStateMixin {
               if (gasState is GasLoadedState) {
                 Color gaugeColor;
                 String warningText;
-                if ((gasState.gasValue + 1) % 1024 < 300) {
+                if (gasState.gasValue < 0) {
+                  gaugeColor = Colors.red.shade700;
+                  warningText = AppConstants.warningProblam;
+                } else if (gasState.gasValue >= 0 && gasState.gasValue < 300) {
                   gaugeColor = Colors.green;
-                  warningText = AppConstants.warning1Text;
-                } else if ((gasState.gasValue + 1) % 1024 < 700) {
+                  warningText = AppConstants.warningNormal;
+                } else if (gasState.gasValue < 700) {
                   gaugeColor = Colors.orange;
-                  warningText = AppConstants.warning2Text;
-                } else if ((gasState.gasValue + 1) % 1024 < 900) {
+                  warningText = AppConstants.warningModerate;
+                } else if (gasState.gasValue < 900) {
                   gaugeColor = Colors.redAccent;
-                  warningText = AppConstants.warning3Text;
+                  warningText = AppConstants.warningHigh;
                 } else {
                   gaugeColor = Colors.red.shade900;
-                  warningText = AppConstants.warning4Text;
+                  warningText = AppConstants.warningExtremelyHigh;
                 }
 
                 return Center(
